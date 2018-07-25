@@ -212,6 +212,7 @@ export default class App extends React.Component {
       .then(({ uri }) => {
         console.log("Finished downloading to ", uri);
         this.soundURI = uri;
+        console.log("dddddddddddd", this.soundURI);
       })
       .catch(error => {
         console.error(error);
@@ -242,6 +243,18 @@ export default class App extends React.Component {
     );
     this.sound = sound;
 
+    // const soundObject = new Expo.Audio.Sound();
+    // try {
+    //   await soundObject.loadAsync(this.soundURI);
+
+    //   // Your sound is playing!
+    // } catch (error) {
+    //   // An error occurred!
+    // }
+    // console.log(soundObject);
+    // soundObject.playAsync();
+    // this.sound = soundObject;
+
     this.setState({
       isLoading: false
     });
@@ -249,7 +262,8 @@ export default class App extends React.Component {
 
   async uploadAudioAsync(uri) {
     //console.log("Uploading " + uri);e
-    let apiUrl = "https://t9kfovb7kk.execute-api.eu-west-2.amazonaws.com/dev";
+    let apiUrl =
+      "https://t9kfovb7kk.execute-api.eu-west-2.amazonaws.com/dev/api/sample";
     let uriParts = uri.split(".");
     let fileType = uriParts[uriParts.length - 1];
 
@@ -269,9 +283,21 @@ export default class App extends React.Component {
       }
     };
 
-    //console.log("POSTing " + uri + " to " + apiUrl);
+    console.log("POSTing " + uri + " to " + apiUrl);
+
     return fetch(apiUrl, options);
   }
+
+  playSound = async () => {
+    await Audio.setIsEnabledAsync(true);
+    const sound = new Audio.Sound();
+    //could also do loadAsync straight from s3 bucket link
+    //need to rearrange so that sound is loaded as this.sound before play
+    await sound.loadAsync({
+      uri: this.soundURI
+    });
+    await sound.playAsync();
+  };
 
   _onRecordPressed = () => {
     if (this.state.isRecording) {
@@ -282,13 +308,14 @@ export default class App extends React.Component {
   };
 
   _onPlayPausePressed = () => {
-    if (this.sound != null) {
-      if (this.state.isPlaying) {
-        this.sound.pauseAsync();
-      } else {
-        this.sound.playAsync();
-      }
-    }
+    // if (this.sound != null) {
+    //   if (this.state.isPlaying) {
+    //     this.sound.pauseAsync();
+    //   } else {
+    //     this.sound.playAsync();
+    //   }
+    // }
+    this.playSound();
   };
 
   _onStopPressed = () => {
