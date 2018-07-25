@@ -213,6 +213,7 @@ export default class App extends React.Component {
       .then(({ uri }) => {
         console.log("Finished downloading to ", uri);
         this.soundURI = uri;
+        console.log("dddddddddddd", this.soundURI);
       })
       .catch(error => {
         console.error(error);
@@ -243,6 +244,18 @@ export default class App extends React.Component {
     );
     this.sound = sound;
 
+    // const soundObject = new Expo.Audio.Sound();
+    // try {
+    //   await soundObject.loadAsync(this.soundURI);
+
+    //   // Your sound is playing!
+    // } catch (error) {
+    //   // An error occurred!
+    // }
+    // console.log(soundObject);
+    // soundObject.playAsync();
+    // this.sound = soundObject;
+
     this.setState({
       isLoading: false
     });
@@ -250,7 +263,8 @@ export default class App extends React.Component {
 
   async uploadAudioAsync(uri) {
     //console.log("Uploading " + uri);e
-    let apiUrl = "https://t9kfovb7kk.execute-api.eu-west-2.amazonaws.com/dev";
+    let apiUrl =
+      "https://t9kfovb7kk.execute-api.eu-west-2.amazonaws.com/dev/api/sample";
     let uriParts = uri.split(".");
     let fileType = uriParts[uriParts.length - 1];
 
@@ -270,7 +284,8 @@ export default class App extends React.Component {
       }
     };
 
-    //console.log("POSTing " + uri + " to " + apiUrl);
+    console.log("POSTing " + uri + " to " + apiUrl);
+
     return fetch(apiUrl, options);
     //.then(console.log);
   }
@@ -303,7 +318,9 @@ export default class App extends React.Component {
     //   }
     // }
     this.playSound();
+
     console.log("playing");
+
   };
 
   render() {
