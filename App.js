@@ -77,7 +77,7 @@ export default class App extends React.Component {
     this.recording = null;
     this.sound = null;
     this.soundURI = null;
-    this.isSeeking = false;
+
     this.shouldPlayAtEndOfSeek = false;
     this.state = {
       haveRecordingPermissions: false,
@@ -193,6 +193,7 @@ export default class App extends React.Component {
     this.setState({
       isLoading: false
     });
+    console.log("recording");
   }
 
   async _stopRecordingAndEnablePlayback() {
@@ -271,7 +272,19 @@ export default class App extends React.Component {
 
     //console.log("POSTing " + uri + " to " + apiUrl);
     return fetch(apiUrl, options);
+    //.then(console.log);
   }
+
+  playSound = async () => {
+    await Audio.setIsEnabledAsync(true);
+    const sound = new Audio.Sound();
+    //could also do loadAsync straight from s3 bucket link
+    //need to rearrange so that sound is loaded as this.sound before play
+    await sound.loadAsync({
+      uri: this.soundURI
+    });
+    await sound.playAsync();
+  };
 
   _onRecordPressed = () => {
     if (this.state.isRecording) {
@@ -282,116 +295,16 @@ export default class App extends React.Component {
   };
 
   _onPlayPausePressed = () => {
-    if (this.sound != null) {
-      if (this.state.isPlaying) {
-        this.sound.pauseAsync();
-      } else {
-        this.sound.playAsync();
-      }
-    }
+    // if (this.sound != null) {
+    //   if (this.state.isPlaying) {
+    //     this.sound.pauseAsync();
+    //   } else {
+    //     this.sound.playAsync();
+    //   }
+    // }
+    this.playSound();
+    console.log("playing");
   };
-
-  _onStopPressed = () => {
-    if (this.sound != null) {
-      this.sound.stopAsync();
-    }
-  };
-
-  _onMutePressed = () => {
-    if (this.sound != null) {
-      this.sound.setIsMutedAsync(!this.state.muted);
-    }
-  };
-
-  _onVolumeSliderValueChange = value => {
-    if (this.sound != null) {
-      this.sound.setVolumeAsync(value);
-    }
-  };
-
-  _trySetRate = async (rate, shouldCorrectPitch) => {
-    if (this.sound != null) {
-      try {
-        await this.sound.setRateAsync(rate, shouldCorrectPitch);
-      } catch (error) {
-        // Rate changing could not be performed, possibly because the client's Android API is too old.
-      }
-    }
-  };
-
-  _onRateSliderSlidingComplete = async value => {
-    this._trySetRate(value * RATE_SCALE, this.state.shouldCorrectPitch);
-  };
-
-  _onPitchCorrectionPressed = async value => {
-    this._trySetRate(this.state.rate, !this.state.shouldCorrectPitch);
-  };
-
-  _onSeekSliderValueChange = value => {
-    if (this.sound != null && !this.isSeeking) {
-      this.isSeeking = true;
-      this.shouldPlayAtEndOfSeek = this.state.shouldPlay;
-      this.sound.pauseAsync();
-    }
-  };
-
-  _onSeekSliderSlidingComplete = async value => {
-    if (this.sound != null) {
-      this.isSeeking = false;
-      const seekPosition = value * this.state.soundDuration;
-      if (this.shouldPlayAtEndOfSeek) {
-        this.sound.playFromPositionAsync(seekPosition);
-      } else {
-        this.sound.setPositionAsync(seekPosition);
-      }
-    }
-  };
-
-  _getSeekSliderPosition() {
-    if (
-      this.sound != null &&
-      this.state.soundPosition != null &&
-      this.state.soundDuration != null
-    ) {
-      return this.state.soundPosition / this.state.soundDuration;
-    }
-    return 0;
-  }
-
-  _getMMSSFromMillis(millis) {
-    const totalSeconds = millis / 1000;
-    const seconds = Math.floor(totalSeconds % 60);
-    const minutes = Math.floor(totalSeconds / 60);
-
-    const padWithZero = number => {
-      const string = number.toString();
-      if (number < 10) {
-        return "0" + string;
-      }
-      return string;
-    };
-    return padWithZero(minutes) + ":" + padWithZero(seconds);
-  }
-
-  _getPlaybackTimestamp() {
-    if (
-      this.sound != null &&
-      this.state.soundPosition != null &&
-      this.state.soundDuration != null
-    ) {
-      return `${this._getMMSSFromMillis(
-        this.state.soundPosition
-      )} / ${this._getMMSSFromMillis(this.state.soundDuration)}`;
-    }
-    return "";
-  }
-
-  _getRecordingTimestamp() {
-    if (this.state.recordingDuration != null) {
-      return `${this._getMMSSFromMillis(this.state.recordingDuration)}`;
-    }
-    return `${this._getMMSSFromMillis(0)}`;
-  }
 
   render() {
     return !this.state.fontLoaded ? (
@@ -437,23 +350,7 @@ export default class App extends React.Component {
               >
                 {this.state.isRecording ? "LIVE" : ""}
               </Text>
-              <View style={styles.recordingDataRowContainer}>
-                <Image
-                  style={[
-                    styles.image,
-                    { opacity: this.state.isRecording ? 1.0 : 0.0 }
-                  ]}
-                  source={ICON_RECORDING.module}
-                />
-                <Text
-                  style={[
-                    styles.recordingTimestamp,
-                    { fontFamily: "cutive-mono-regular" }
-                  ]}
-                >
-                  {this._getRecordingTimestamp()}
-                </Text>
-              </View>
+
               <View />
             </View>
             <View />
@@ -472,53 +369,10 @@ export default class App extends React.Component {
           ]}
         >
           <View />
-          <View style={styles.playbackContainer}>
-            <Slider
-              style={styles.playbackSlider}
-              trackImage={ICON_TRACK_1.module}
-              thumbImage={ICON_THUMB_1.module}
-              value={this._getSeekSliderPosition()}
-              onValueChange={this._onSeekSliderValueChange}
-              onSlidingComplete={this._onSeekSliderSlidingComplete}
-              disabled={!this.state.isPlaybackAllowed || this.state.isLoading}
-            />
-            <Text
-              style={[
-                styles.playbackTimestamp,
-                { fontFamily: "cutive-mono-regular" }
-              ]}
-            >
-              {this._getPlaybackTimestamp()}
-            </Text>
-          </View>
+
           <View
             style={[styles.buttonsContainerBase, styles.buttonsContainerTopRow]}
           >
-            <View style={styles.volumeContainer}>
-              <TouchableHighlight
-                underlayColor={BACKGROUND_COLOR}
-                style={styles.wrapper}
-                onPress={this._onMutePressed}
-                disabled={!this.state.isPlaybackAllowed || this.state.isLoading}
-              >
-                <Image
-                  style={styles.image}
-                  source={
-                    this.state.muted
-                      ? ICON_MUTED_BUTTON.module
-                      : ICON_UNMUTED_BUTTON.module
-                  }
-                />
-              </TouchableHighlight>
-              <Slider
-                style={styles.volumeSlider}
-                trackImage={ICON_TRACK_1.module}
-                thumbImage={ICON_THUMB_2.module}
-                value={1}
-                onValueChange={this._onVolumeSliderValueChange}
-                disabled={!this.state.isPlaybackAllowed || this.state.isLoading}
-              />
-            </View>
             <View style={styles.playStopContainer}>
               <TouchableHighlight
                 underlayColor={BACKGROUND_COLOR}
@@ -535,47 +389,10 @@ export default class App extends React.Component {
                   }
                 />
               </TouchableHighlight>
-              <TouchableHighlight
-                underlayColor={BACKGROUND_COLOR}
-                style={styles.wrapper}
-                onPress={this._onStopPressed}
-                disabled={!this.state.isPlaybackAllowed || this.state.isLoading}
-              >
-                <Image style={styles.image} source={ICON_STOP_BUTTON.module} />
-              </TouchableHighlight>
             </View>
             <View />
           </View>
-          <View
-            style={[
-              styles.buttonsContainerBase,
-              styles.buttonsContainerBottomRow
-            ]}
-          >
-            <Text
-              style={[styles.timestamp, { fontFamily: "cutive-mono-regular" }]}
-            >
-              Rate:
-            </Text>
-            <Slider
-              style={styles.rateSlider}
-              trackImage={ICON_TRACK_1.module}
-              thumbImage={ICON_THUMB_1.module}
-              value={this.state.rate / RATE_SCALE}
-              onSlidingComplete={this._onRateSliderSlidingComplete}
-              disabled={!this.state.isPlaybackAllowed || this.state.isLoading}
-            />
-            <TouchableHighlight
-              underlayColor={BACKGROUND_COLOR}
-              style={styles.wrapper}
-              onPress={this._onPitchCorrectionPressed}
-              disabled={!this.state.isPlaybackAllowed || this.state.isLoading}
-            >
-              <Text style={[{ fontFamily: "cutive-mono-regular" }]}>
-                PC: {this.state.shouldCorrectPitch ? "yes" : "no"}
-              </Text>
-            </TouchableHighlight>
-          </View>
+
           <View />
         </View>
       </View>
