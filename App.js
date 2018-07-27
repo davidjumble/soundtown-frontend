@@ -51,8 +51,13 @@ export default class App extends React.Component {
 
     this.shouldPlayAtEndOfSeek = false;
     this.state = {
-      haveRecordingPermissions: false,
+      //final states
+      isRecording: false,
       isLoading: false,
+      soundsReady: false,
+      isPlayingSound: false,
+      //old states
+      haveRecordingPermissions: false,
       isPlaybackAllowed: false,
       muted: false,
       soundPosition: null,
@@ -60,7 +65,6 @@ export default class App extends React.Component {
       recordingDuration: null,
       shouldPlay: false,
       isPlaying: false,
-      isRecording: false,
       fontLoaded: false,
 
       volume: 1.0,
@@ -352,6 +356,28 @@ export default class App extends React.Component {
               <View />
             </View>
             <View />
+
+            <View>
+              <View style={styles.playButton}>
+                <TouchableHighlight
+                  underlayColor={BACKGROUND_COLOR}
+                  style={[
+                    {
+                      opacity: this.state.isLoading ? DISABLED_OPACITY : 1.0
+                    }
+                  ]}
+                  onPress={this._onPlayPausePressed}
+                  disabled={
+                    !this.state.isPlaybackAllowed || this.state.isLoading
+                  }
+                >
+                  <Image
+                    style={styles.image}
+                    source={ICON_PLAY_BUTTON.module}
+                  />
+                </TouchableHighlight>
+              </View>
+            </View>
 
             <View>
               <View style={styles.playButton}>
