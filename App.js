@@ -9,7 +9,9 @@ import {
   StyleSheet,
   Text,
   TouchableHighlight,
-  View
+  View,
+  ScrollView,
+  ImageBackground
 } from "react-native";
 import Expo, { Asset, Audio, FileSystem, Font, Permissions } from "expo";
 
@@ -45,6 +47,7 @@ export default class App extends React.Component {
     this.recording = null;
     this.sound = null;
     this.soundURI = null;
+    this.newsound = null;
 
     this.shouldPlayAtEndOfSeek = false;
     this.state = {
@@ -157,7 +160,9 @@ export default class App extends React.Component {
     }
     let uri = await this.recording.getURI();
 
-    await this.uploadAudioAsync(uri);
+    //UNCOMMENT THIS OUT ONCE WE ARE READY TO SEND FILES EVERY TIMER
+
+    //await this.uploadAudioAsync(uri);
     // sound will upload and then it will save new sounds using
     await this.downloadNewSounds();
 
@@ -182,6 +187,15 @@ export default class App extends React.Component {
       this._updateScreenForSoundStatus
     );
     this.sound = sound;
+
+    await Audio.setIsEnabledAsync(true);
+    const newsound = new Audio.Sound();
+    //could also do loadAsync straight from s3 bucket link
+    //need to rearrange so that sound is loaded as this.sound before play
+    await newsound.loadAsync({
+      uri: this.soundURI
+    });
+    this.newsound = newsound;
 
     this.setState({
       isLoading: false
@@ -229,7 +243,7 @@ export default class App extends React.Component {
 
   async uploadAudioAsync(uri) {
     //console.log("Uploading " + uri);e
-    let apiUrl = "https://soundtown-dev.herokuapp.com/api/sample";
+    let apiUrl = "https://soundtown-dev.herokuapp.com";
     let uriParts = uri.split(".");
     let fileType = uriParts[uriParts.length - 1];
 
@@ -255,17 +269,6 @@ export default class App extends React.Component {
     //.then(console.log);
   }
 
-  playSound = async () => {
-    await Audio.setIsEnabledAsync(true);
-    const sound = new Audio.Sound();
-    //could also do loadAsync straight from s3 bucket link
-    //need to rearrange so that sound is loaded as this.sound before play
-    await sound.loadAsync({
-      uri: this.soundURI
-    });
-    await sound.playAsync();
-  };
-
   _onRecordPressed = () => {
     if (this.state.isRecording) {
       this._stopRecordingAndEnablePlayback();
@@ -282,7 +285,7 @@ export default class App extends React.Component {
     //     this.sound.playAsync();
     //   }
     // }
-    this.playSound();
+    this.newsound.replayAsync();
 
     console.log("playing");
   };
@@ -304,83 +307,97 @@ export default class App extends React.Component {
         <View />
       </View>
     ) : (
-      <View style={styles.container}>
-        <View
-          style={[
-            styles.halfScreenContainer,
-            {
-              opacity: this.state.isLoading ? DISABLED_OPACITY : 1.0
-            }
-          ]}
+      //
+      //
+      // This is the Main view
+      <ScrollView>
+        <ImageBackground
+          source={require("./images/soundtown-one.jpg")}
+          style={styles.background}
         >
-          <View />
-          <View style={styles.recordingContainer}>
+          <View style={styles.container}>
             <View />
-            <TouchableHighlight
-              underlayColor={BACKGROUND_COLOR}
-              style={styles.wrapper}
-              onPress={this._onRecordPressed}
-              disabled={this.state.isLoading}
-            >
-              <Image style={styles.image} source={ICON_RECORD_BUTTON.module} />
-            </TouchableHighlight>
-            <View style={styles.recordingDataContainer}>
-              <View />
-              <Text
-                style={[styles.liveText, { fontFamily: "cutive-mono-regular" }]}
-              >
-                {this.state.isRecording ? "LIVE" : ""}
-              </Text>
 
-              <View />
-            </View>
             <View />
-          </View>
-          <View />
-        </View>
-        <View
-          style={[
-            styles.halfScreenContainer,
-            {
-              opacity:
-                !this.state.isPlaybackAllowed || this.state.isLoading
-                  ? DISABLED_OPACITY
-                  : 1.0
-            }
-          ]}
-        >
-          <View />
-
-          <View
-            style={[styles.buttonsContainerBase, styles.buttonsContainerTopRow]}
-          >
-            <View style={styles.playStopContainer}>
+            <View style={styles.recordingContainer}>
+              <View />
               <TouchableHighlight
                 underlayColor={BACKGROUND_COLOR}
-                style={styles.wrapper}
-                onPress={this._onPlayPausePressed}
-                disabled={!this.state.isPlaybackAllowed || this.state.isLoading}
+                style={[
+                  {
+                    opacity: this.state.isLoading ? DISABLED_OPACITY : 1.0
+                  }
+                ]}
+                onPress={this._onRecordPressed}
+                disabled={this.state.isLoading}
               >
                 <Image
                   style={styles.image}
-                  source={
-                    this.state.isPlaying
-                      ? ICON_PAUSE_BUTTON.module
-                      : ICON_PLAY_BUTTON.module
-                  }
+                  source={ICON_RECORD_BUTTON.module}
                 />
               </TouchableHighlight>
+              <View style={styles.recordingDataContainer}>
+                <View />
+                <Text
+                  style={[
+                    styles.liveText,
+                    { fontFamily: "cutive-mono-regular" }
+                  ]}
+                >
+                  {this.state.isRecording ? "LIVE" : ""}
+                </Text>
+
+                <View />
+              </View>
+              <View />
             </View>
             <View />
-          </View>
 
-          <View />
-        </View>
-      </View>
+            <View>
+              <View style={styles.playButton}>
+                <TouchableHighlight
+                  underlayColor={BACKGROUND_COLOR}
+                  style={[
+                    {
+                      opacity: this.state.isLoading ? DISABLED_OPACITY : 1.0
+                    }
+                  ]}
+                  onPress={this._onPlayPausePressed}
+                  disabled={
+                    !this.state.isPlaybackAllowed || this.state.isLoading
+                  }
+                >
+                  <Image
+                    style={styles.image}
+                    source={ICON_PLAY_BUTTON.module}
+                  />
+                </TouchableHighlight>
+              </View>
+            </View>
+
+            <View />
+          </View>
+        </ImageBackground>
+      </ScrollView>
     );
   }
 }
 
-const styles = StyleSheet.create({});
+const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+    maxWidth: "100%",
+    height: "100%",
+    resizeMode: "cover"
+  },
+
+  container: {
+    flex: 1,
+    maxWidth: "95%",
+    height: 1000,
+    resizeMode: "cover"
+  },
+  playbutton: {}
+});
 
 Expo.registerRootComponent(App);
