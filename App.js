@@ -145,6 +145,8 @@ class App extends Component {
   };
 }
 
+//Moved all styling related code here
+
 const styles = StyleSheet.create({
   background: {
     flex: 1,
