@@ -9,8 +9,12 @@ import {
   ScrollView,
   ImageBackground,
 } from 'react-native';
-import Expo, {
-  Asset, Audio, FileSystem, Font, Permissions,
+import {
+  Asset,
+  Audio,
+  FileSystem,
+  Font,
+  Permissions,
 } from 'expo';
 
 class App extends Component {
@@ -25,7 +29,7 @@ class App extends Component {
       isPlayingSound: false,
       fontLoaded: false,
       haveRecordingPermissions: false,
-      toneSoundObjs: {}
+      toneSoundObjs: {},
     };
 
   }
@@ -136,9 +140,55 @@ class App extends Component {
                   </View>
                 </View>
               </View>
-            </ImageBackground>
-          </ScrollView>
-        );
+
+            </View>
+            <View>
+              <View style={styles.playButton}>
+                <TouchableHighlight
+                  underlayColor={BACKGROUND_COLOR}
+                  style={[
+                    {
+                      opacity: this.state.isLoading ? DISABLED_OPACITY : 1.0,
+                    },
+                  ]}
+                  onPress={() => this.playSound('c3')}
+                  disabled={
+                    !this.state.soundsReady || this.state.isLoading
+                  }
+                >
+                  <Image
+                    style={styles.image}
+                    source={ICON_PLAY_BUTTON.module}
+                  />
+                </TouchableHighlight>
+              </View>
+            </View>
+            <View>
+              <View style={styles.playButton}>
+                <TouchableHighlight
+                  underlayColor={BACKGROUND_COLOR}
+                  style={[
+                    {
+                      opacity: this.state.isLoading ? DISABLED_OPACITY : 1.0,
+                    },
+                  ]}
+                  onPress={() => this.playSound('c4')}
+                  disabled={
+                    !this.state.soundsReady || this.state.isLoading
+                  }
+                >
+                  <Image
+                    style={styles.image}
+                    source={ICON_PLAY_BUTTON.module}
+                  />
+                </TouchableHighlight>
+              </View>
+            </View>
+          </View>
+        </ImageBackground>
+      </ScrollView>
+    );
+         
   }
 
   askForPermissions = async () => {
@@ -148,6 +198,43 @@ class App extends Component {
     });
   };
 
+
+  getTones = (uri) => {
+    const fileType = 'caf';
+    const formData = new FormData();
+
+    formData.append('file', {
+      uri,
+      name: `recording.${fileType}`,
+      type: `audio/x-${fileType}`,
+    });
+
+    const options = {
+      method: "POST",
+      body: formData,
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "multipart/form-data"
+      }
+    };
+
+    fetch("https://soundtown-dev.herokuapp.com/api/sample", options)
+      .then(res => res.json())
+      .then(tones => {
+        const toneSoundObjs = {};
+        for (let tone in tones) {
+          const newTone = new Audio.Sound();
+          newTone.loadAsync({uri: tones[tone]});
+          toneSoundObjs[tone] = newTone;
+        }
+        this.setState({toneSoundObjs, isLoading: false, soundsReady: true});
+      });
+  }
+
+  playSound = (tone) => {
+    this.state.toneSoundObjs[tone].replayAsync();
+  }
+  
   _onRecordPressed = () => {
     if (this.state.isRecording) {
       this._stopRecordingAndEnablePlayback();
@@ -236,6 +323,7 @@ class App extends Component {
       isLoading: true
     });
     this.getTones(uri)
+
   }
 }
 
