@@ -45,9 +45,11 @@ class App extends Component {
   }
 
   render() {
-    return !this.state.fontLoaded ? (
-      <View style={styles.emptyContainer} />
-    ) : !this.state.haveRecordingPermissions ? (
+    return !this.state.fontLoaded ? 
+    ( 
+    <View style={styles.emptyContainer} />
+    ) : !this.state.haveRecordingPermissions ? 
+    (
       <View style={styles.container}>
         <View />
         <Text
@@ -61,9 +63,6 @@ class App extends Component {
         <View />
       </View>
     ) : (
-          //
-          //
-          // This is the Main view
           <ScrollView>
             <ImageBackground
               source={require('./images/soundtown-one.jpg')}
@@ -97,96 +96,51 @@ class App extends Component {
                     </Text>
                   </View>
                 </View>
-                <View>
-                  <View style={styles.playButton}>
-                    <TouchableHighlight
-                      underlayColor={BACKGROUND_COLOR}
-                      style={[
-                        {
-                          opacity: this.state.isLoading ? DISABLED_OPACITY : 1.0,
-                        },
-                      ]}
-                      onPress={this._onPlayPausePressed}
-                      disabled={
-                        !this.state.soundsReady || this.state.isLoading
-                      }
-                    >
-                      <Image
-                        style={styles.image}
-                        source={ICON_PLAY_BUTTON.module}
-                      />
-                    </TouchableHighlight>
-                  </View>
-                </View>
-                <View>
-                  <View style={styles.playButton}>
-                    <TouchableHighlight
-                      underlayColor={BACKGROUND_COLOR}
-                      style={[
-                        {
-                          opacity: this.state.isLoading ? DISABLED_OPACITY : 1.0,
-                        },
-                      ]}
-                      onPress={this._onPlayPausePressed}
-                      disabled={
-                        !this.state.soundsReady || this.state.isLoading
-                      }
-                    >
-                      <Image
-                        style={styles.image}
-                        source={ICON_PLAY_BUTTON.module}
-                      />
-                    </TouchableHighlight>
-                  </View>
+              </View>
+              <View>
+                <View style={styles.playButton}>
+                  <TouchableHighlight
+                    underlayColor={BACKGROUND_COLOR}
+                    style={[
+                      {
+                        opacity: this.state.isLoading ? DISABLED_OPACITY : 1.0,
+                      },
+                    ]}
+                    onPress={() => this.playSound('c3')}
+                    disabled={
+                      !this.state.soundsReady || this.state.isLoading
+                    }
+                  >
+                    <Image
+                      style={styles.image}
+                      source={ICON_PLAY_BUTTON.module}
+                    />
+                  </TouchableHighlight>
                 </View>
               </View>
-
-            </View>
-            <View>
-              <View style={styles.playButton}>
-                <TouchableHighlight
-                  underlayColor={BACKGROUND_COLOR}
-                  style={[
-                    {
-                      opacity: this.state.isLoading ? DISABLED_OPACITY : 1.0,
-                    },
-                  ]}
-                  onPress={() => this.playSound('c3')}
-                  disabled={
-                    !this.state.soundsReady || this.state.isLoading
-                  }
-                >
-                  <Image
-                    style={styles.image}
-                    source={ICON_PLAY_BUTTON.module}
-                  />
-                </TouchableHighlight>
+              <View>
+                <View style={styles.playButton}>
+                  <TouchableHighlight
+                    underlayColor={BACKGROUND_COLOR}
+                    style={[
+                      {
+                        opacity: this.state.isLoading ? DISABLED_OPACITY : 1.0,
+                      },
+                    ]}
+                    onPress={() => this.playSound('c4')}
+                    disabled={
+                      !this.state.soundsReady || this.state.isLoading
+                    }
+                  >
+                    <Image
+                      style={styles.image}
+                      source={ICON_PLAY_BUTTON.module}
+                    />
+                  </TouchableHighlight>
+                </View>
               </View>
-            </View>
-            <View>
-              <View style={styles.playButton}>
-                <TouchableHighlight
-                  underlayColor={BACKGROUND_COLOR}
-                  style={[
-                    {
-                      opacity: this.state.isLoading ? DISABLED_OPACITY : 1.0,
-                    },
-                  ]}
-                  onPress={() => this.playSound('c4')}
-                  disabled={
-                    !this.state.soundsReady || this.state.isLoading
-                  }
-                >
-                  <Image
-                    style={styles.image}
-                    source={ICON_PLAY_BUTTON.module}
-                  />
-                </TouchableHighlight>
-              </View>
-            </View>
-          </View>
-        </ImageBackground>
-      </ScrollView>
+            </ImageBackground>
+          </ScrollView>
     );
          
   }
@@ -220,11 +174,12 @@ class App extends Component {
 
     fetch("https://soundtown-dev.herokuapp.com/api/sample", options)
       .then(res => res.json())
-      .then(tones => {
+      .then(({convertedTones}) => {
+        console.log(convertedTones);
         const toneSoundObjs = {};
-        for (let tone in tones) {
+        for (let tone in convertedTones) {
           const newTone = new Audio.Sound();
-          newTone.loadAsync({uri: tones[tone]});
+          newTone.loadAsync({uri: convertedTones[tone]});
           toneSoundObjs[tone] = newTone;
         }
         this.setState({toneSoundObjs, isLoading: false, soundsReady: true});
@@ -248,11 +203,14 @@ class App extends Component {
       isRecording: true
     });
     //clears current sound file if there is one
-    if (this.state.toneSoundObjs !== null) {
-      await this.state.toneSoundObjs.unloadAsync();
-      //may not work
-      this.state.toneSoundObjs.setOnPlaybackStatusUpdate(null);
-      this.state.toneSoundObjs = {};
+    const tones = this.state.toneSoundObjs;
+    for (let tone in tones) {
+      if (tones[tone] !== null) {
+        await tones[tone].unloadAsync();
+        //may not work
+        tones[tone].setOnPlaybackStatusUpdate(null);
+        tones[tone] = {};
+      }
     }
     //audio settings
     await Audio.setAudioModeAsync({
@@ -347,6 +305,7 @@ const styles = StyleSheet.create({
 });
 
 const BACKGROUND_COLOR = "#FFF8ED";
+const DISABLED_OPACITY = 0.5;
 
 class Icon {
   constructor(module, width, height) {
