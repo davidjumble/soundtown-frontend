@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component } from "react";
 import {
   Dimensions,
   Image,
@@ -7,15 +7,12 @@ import {
   TouchableHighlight,
   View,
   ScrollView,
-  ImageBackground,
-} from 'react-native';
-import {
-  Asset,
-  Audio,
-  FileSystem,
-  Font,
-  Permissions,
-} from 'expo';
+  ImageBackground
+} from "react-native";
+import { Asset, Audio, FileSystem, Font, Permissions } from "expo";
+import styles from "./styles";
+import RecordButtons from "./components/record-buttons";
+import Buttons from "./components/play-buttons";
 
 class App extends Component {
   constructor() {
@@ -29,15 +26,14 @@ class App extends Component {
       isPlayingSound: false,
       fontLoaded: false,
       haveRecordingPermissions: false,
-      toneSoundObjs: {},
+      toneSoundObjs: {}
     };
-
   }
 
   componentDidMount() {
     (async () => {
       await Font.loadAsync({
-        'cutive-mono-regular': require('./assets/fonts/CutiveMono-Regular.ttf'),
+        "cutive-mono-regular": require("./assets/fonts/CutiveMono-Regular.ttf")
       });
       this.setState({ fontLoaded: true });
     })();
@@ -45,104 +41,40 @@ class App extends Component {
   }
 
   render() {
-    return !this.state.fontLoaded ? 
-    ( 
-    <View style={styles.emptyContainer} />
-    ) : !this.state.haveRecordingPermissions ? 
-    (
+    return !this.state.fontLoaded ? (
+      <View style={styles.emptyContainer} />
+    ) : !this.state.haveRecordingPermissions ? (
       <View style={styles.container}>
         <View />
         <Text
           style={[
             styles.noPermissionsText,
-            { fontFamily: 'cutive-mono-regular' },
+            { fontFamily: "cutive-mono-regular" }
           ]}
         >
           You must enable audio recording permissions in order to use this app.
-          </Text>
+        </Text>
         <View />
       </View>
     ) : (
-          <ScrollView>
-            <ImageBackground
-              source={require('./images/soundtown-one.jpg')}
-              style={styles.background}
-            >
-              <View style={styles.container}>
-                <View style={styles.recordingContainer}>
-                  <TouchableHighlight
-                    underlayColor={BACKGROUND_COLOR}
-                    style={[
-                      {
-                        opacity: this.state.isLoading ? DISABLED_OPACITY : 1.0,
-                      },
-                    ]}
-                    onPress={this._onRecordPressed}
-                    disabled={this.state.isLoading}
-                  >
-                    <Image
-                      style={styles.image}
-                      source={ICON_RECORD_BUTTON.module}
-                    />
-                  </TouchableHighlight>
-                  <View style={styles.recordingDataContainer}>
-                    <Text
-                      style={[
-                        styles.liveText,
-                        { fontFamily: 'cutive-mono-regular' },
-                      ]}
-                    >
-                      {this.state.isRecording ? 'LIVE' : ''}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-              <View>
-                <View style={styles.playButton}>
-                  <TouchableHighlight
-                    underlayColor={BACKGROUND_COLOR}
-                    style={[
-                      {
-                        opacity: this.state.isLoading ? DISABLED_OPACITY : 1.0,
-                      },
-                    ]}
-                    onPress={() => this.playSound('c3')}
-                    disabled={
-                      !this.state.soundsReady || this.state.isLoading
-                    }
-                  >
-                    <Image
-                      style={styles.image}
-                      source={ICON_PLAY_BUTTON.module}
-                    />
-                  </TouchableHighlight>
-                </View>
-              </View>
-              <View>
-                <View style={styles.playButton}>
-                  <TouchableHighlight
-                    underlayColor={BACKGROUND_COLOR}
-                    style={[
-                      {
-                        opacity: this.state.isLoading ? DISABLED_OPACITY : 1.0,
-                      },
-                    ]}
-                    onPress={() => this.playSound('c4')}
-                    disabled={
-                      !this.state.soundsReady || this.state.isLoading
-                    }
-                  >
-                    <Image
-                      style={styles.image}
-                      source={ICON_PLAY_BUTTON.module}
-                    />
-                  </TouchableHighlight>
-                </View>
-              </View>
-            </ImageBackground>
-          </ScrollView>
+      <ScrollView>
+        <ImageBackground
+          source={require("./images/soundtown25cm.jpg")}
+          style={styles.background}
+        >
+          <RecordButtons
+            _onRecordPressed={this._onRecordPressed}
+            isLoading={this.state.isLoading}
+            isRecording={this.state.isRecording}
+          />
+          <Buttons
+            toneSoundObjs={this.state.toneSoundObjs}
+            isLoading={this.state.isLoaded}
+            canPlay={this.state.soundsReady}
+          />
+        </ImageBackground>
+      </ScrollView>
     );
-         
   }
 
   askForPermissions = async () => {
@@ -152,15 +84,14 @@ class App extends Component {
     });
   };
 
-
-  getTones = (uri) => {
-    const fileType = 'caf';
+  getTones = uri => {
+    const fileType = "caf";
     const formData = new FormData();
 
-    formData.append('file', {
+    formData.append("file", {
       uri,
       name: `recording.${fileType}`,
-      type: `audio/x-${fileType}`,
+      type: `audio/x-${fileType}`
     });
 
     const options = {
@@ -174,22 +105,22 @@ class App extends Component {
 
     fetch("https://soundtown-dev.herokuapp.com/api/sample", options)
       .then(res => res.json())
-      .then(({convertedTones}) => {
+      .then(({ convertedTones }) => {
         console.log(convertedTones);
         const toneSoundObjs = {};
         for (let tone in convertedTones) {
           const newTone = new Audio.Sound();
-          newTone.loadAsync({uri: convertedTones[tone]});
+          newTone.loadAsync({ uri: convertedTones[tone] });
           toneSoundObjs[tone] = newTone;
         }
-        this.setState({toneSoundObjs, isLoading: false, soundsReady: true});
+        this.setState({ toneSoundObjs, isLoading: false, soundsReady: true });
       });
-  }
+  };
 
-  playSound = (tone) => {
+  playSound = tone => {
     this.state.toneSoundObjs[tone].replayAsync();
-  }
-  
+  };
+
   _onRecordPressed = () => {
     if (this.state.isRecording) {
       this._stopRecordingAndEnablePlayback();
@@ -265,7 +196,6 @@ class App extends Component {
     //await this.uploadAudioAsync(uri);
     // sound will upload and then it will save new sounds using
 
-
     await Audio.setAudioModeAsync({
       allowsRecordingIOS: false,
       interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_MIX_WITH_OTHERS,
@@ -280,52 +210,8 @@ class App extends Component {
     this.setState({
       isLoading: true
     });
-    this.getTones(uri)
-
+    this.getTones(uri);
   }
 }
-
-//Moved all styling related code here
-
-const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    maxWidth: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-
-  container: {
-    flex: 1,
-    maxWidth: '95%',
-    height: 1000,
-    resizeMode: 'cover',
-  },
-  playbutton: {},
-});
-
-const BACKGROUND_COLOR = "#FFF8ED";
-const DISABLED_OPACITY = 0.5;
-
-class Icon {
-  constructor(module, width, height) {
-    this.module = module;
-    this.width = width;
-    this.height = height;
-    Asset.fromModule(this.module).downloadAsync();
-  }
-}
-
-const ICON_RECORD_BUTTON = new Icon(
-  require("./assets/images/record_button.png"),
-  70,
-  119
-);
-
-const ICON_PLAY_BUTTON = new Icon(
-  require("./assets/images/play_button.png"),
-  34,
-  51
-);
 
 export default App;
