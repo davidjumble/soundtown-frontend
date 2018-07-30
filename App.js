@@ -9,8 +9,12 @@ import {
   ScrollView,
   ImageBackground,
 } from 'react-native';
-import Expo, {
-  Asset, Audio, FileSystem, Font, Permissions,
+import {
+  Asset,
+  Audio,
+  FileSystem,
+  Font,
+  Permissions,
 } from 'expo';
 
 class App extends Component {
@@ -23,6 +27,7 @@ class App extends Component {
       isPlayingSound: false,
       fontLoaded: false,
       haveRecordingPermissions: false,
+      toneSoundObjs: {},
     };
   }
 
@@ -98,7 +103,7 @@ class App extends Component {
                       opacity: this.state.isLoading ? DISABLED_OPACITY : 1.0,
                     },
                   ]}
-                  onPress={this._onPlayPausePressed}
+                  onPress={() => this.playSound('c3')}
                   disabled={
                     !this.state.soundsReady || this.state.isLoading
                   }
@@ -119,7 +124,7 @@ class App extends Component {
                       opacity: this.state.isLoading ? DISABLED_OPACITY : 1.0,
                     },
                   ]}
-                  onPress={this._onPlayPausePressed}
+                  onPress={() => this.playSound('c4')}
                   disabled={
                     !this.state.soundsReady || this.state.isLoading
                   }
@@ -143,6 +148,42 @@ class App extends Component {
       haveRecordingPermissions: response.status === "granted"
     });
   };
+
+  getTones = (uri) => {
+    const fileType = 'caf';
+    const formData = new FormData();
+
+    formData.append('file', {
+      uri,
+      name: `recording.${fileType}`,
+      type: `audio/x-${fileType}`,
+    });
+
+    const options = {
+      method: "POST",
+      body: formData,
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "multipart/form-data"
+      }
+    };
+
+    fetch("https://soundtown-dev.herokuapp.com/api/sample", options)
+      .then(res => res.json())
+      .then(tones => {
+        const toneSoundObjs = {};
+        for (let tone in tones) {
+          const newTone = new Audio.Sound();
+          newTone.loadAsync({uri: tones[tone]});
+          toneSoundObjs[tone] = newTone;
+        }
+        this.setState({toneSoundObjs, isLoading: false, soundsReady: true});
+      });
+  }
+
+  playSound = (tone) => {
+    this.state.toneSoundObjs[tone].replayAsync();
+  }
 }
 
 //Moved all styling related code here
