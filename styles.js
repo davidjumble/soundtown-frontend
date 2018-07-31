@@ -8,7 +8,6 @@ export default (styles = StyleSheet.create({
 
     width: width,
     height: width * 3,
-    resizeMode: "contain"
   },
   absolute: {
     position: "absolute"
@@ -34,7 +33,6 @@ export default (styles = StyleSheet.create({
   },
   ing: {
     width: width / 2.5,
-    resizeMode: "contain"
   },
   c3: {
     position: "absolute",
@@ -111,6 +109,6 @@ export default (styles = StyleSheet.create({
 
   size: {
     width: width / 10,
-    resizeMode: "contain"
+    resizeMode: 'contain',
   }
 }));

@@ -18,15 +18,15 @@ class App extends Component {
   constructor() {
     super();
     this.recording = null;
+    this.toneSoundObjs = {};
 
     this.state = {
       isRecording: false,
       isLoading: false,
       soundsReady: false,
-      isPlayingSound: false,
+      isPlaying: false,
       fontLoaded: false,
       haveRecordingPermissions: false,
-      toneSoundObjs: {}
     };
   }
 
@@ -41,6 +41,7 @@ class App extends Component {
   }
 
   render() {
+    console.log(this.state.isPlaying);
     return !this.state.fontLoaded ? (
       <View style={styles.emptyContainer} />
     ) : !this.state.haveRecordingPermissions ? (
@@ -57,24 +58,25 @@ class App extends Component {
         <View />
       </View>
     ) : (
-      <ScrollView>
-        <ImageBackground
-          source={require("./images/soundtown25cm.jpg")}
-          style={styles.background}
-        >
-          <RecordButtons
-            _onRecordPressed={this._onRecordPressed}
-            isLoading={this.state.isLoading}
-            isRecording={this.state.isRecording}
-          />
-          <Buttons
-            toneSoundObjs={this.state.toneSoundObjs}
-            isLoading={this.state.isLoaded}
-            canPlay={this.state.soundsReady}
-          />
-        </ImageBackground>
-      </ScrollView>
-    );
+          <ScrollView>
+            <ImageBackground
+              source={require("./images/soundtown25cm.jpg")}
+              style={styles.background}
+              resizeMode='contain'
+            >
+              <RecordButtons
+                _onRecordPressed={this._onRecordPressed}
+                isLoading={this.state.isLoading}
+                isRecording={this.state.isRecording}
+              />
+              <Buttons
+                toneSoundObjs={this.toneSoundObjs}
+                isLoading={this.state.isLoading}
+                canPlay={this.state.soundsReady}
+              />
+            </ImageBackground>
+          </ScrollView>
+        );
   }
 
   askForPermissions = async () => {
@@ -107,18 +109,13 @@ class App extends Component {
       .then(res => res.json())
       .then(({ convertedTones }) => {
         console.log(convertedTones);
-        const toneSoundObjs = {};
         for (let tone in convertedTones) {
-          const newTone = new Audio.Sound();
-          newTone.loadAsync({ uri: convertedTones[tone] });
-          toneSoundObjs[tone] = newTone;
+          this.toneSoundObjs[tone] = new Audio.Sound();
+          this.toneSoundObjs[tone].setOnPlaybackStatusUpdate(this.updateIsPlayingState)
+          this.toneSoundObjs[tone].loadAsync({ uri: convertedTones[tone] });
         }
-        this.setState({ toneSoundObjs, isLoading: false, soundsReady: true });
+        this.setState({ isLoading: false, soundsReady: true });
       });
-  };
-
-  playSound = tone => {
-    this.state.toneSoundObjs[tone].replayAsync();
   };
 
   _onRecordPressed = () => {
@@ -131,18 +128,14 @@ class App extends Component {
 
   async _stopPlaybackAndBeginRecording() {
     this.setState({
-      isRecording: true
+      isRecording: true,
+      soundsReady: false,
     });
     //clears current sound file if there is one
-    const tones = this.state.toneSoundObjs;
-    for (let tone in tones) {
-      if (tones[tone] !== null) {
-        await tones[tone].unloadAsync();
-        //may not work
-        tones[tone].setOnPlaybackStatusUpdate(null);
-        tones[tone] = {};
-      }
+    for (let tone in this.toneSoundObjs) {
+      this.toneSoundObjs[tone].unloadAsync()
     }
+    this.toneSoundObjs = {}
     //audio settings
     await Audio.setAudioModeAsync({
       allowsRecordingIOS: true,
@@ -152,10 +145,15 @@ class App extends Component {
       interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DO_NOT_MIX
     });
     //clears current recording file
+
+    // this.recording.setOnRecordingStatusUpdate(null);
+    // this.recording = null;
+
     if (this.recording !== null) {
       this.recording.setOnRecordingStatusUpdate(null);
       this.recording = null;
     }
+
 
     const recordingSettings = JSON.parse(
       JSON.stringify(Audio.RECORDING_OPTIONS_PRESET_LOW_QUALITY)
@@ -207,10 +205,13 @@ class App extends Component {
 
     //leaving this in as a way of testing that a recording has been made
 
-    this.setState({
-      isLoading: true
-    });
+
     this.getTones(uri);
+  }
+
+  updateIsPlayingState = (playbackStatus) => {
+    if (playbackStatus.isPlaying) this.setState({ isPlaying: true })
+    else this.setState({ isPlaying: false })
   }
 }
 
