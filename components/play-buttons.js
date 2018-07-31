@@ -12,7 +12,6 @@ export default class Buttons extends React.Component {
 
   render() {
     const sounds = this.props.toneSoundObjs;
-    console.log(sounds);
     return (
       <View style={styles.absolute}>
         <TouchableOpacity
