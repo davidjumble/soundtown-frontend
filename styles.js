@@ -7,10 +7,16 @@ export default (styles = StyleSheet.create({
     position: "relative",
 
     width: width,
-    height: width * 3,
+    height: width * 3
   },
   absolute: {
     position: "absolute"
+  },
+
+  bigheads: {
+    position: "relative",
+    bottom: height / 6.5,
+    width: width
   },
 
   playButton: {
@@ -32,7 +38,7 @@ export default (styles = StyleSheet.create({
     top: height / 20
   },
   ing: {
-    width: width / 2.5,
+    width: width / 2.5
   },
   c3: {
     position: "absolute",
@@ -109,6 +115,6 @@ export default (styles = StyleSheet.create({
 
   size: {
     width: width / 10,
-    resizeMode: 'contain',
+    resizeMode: "contain"
   }
 }));

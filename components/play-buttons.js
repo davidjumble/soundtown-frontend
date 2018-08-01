@@ -8,12 +8,23 @@ import { Audio } from "expo";
 export default class Buttons extends React.Component {
   constructor(props) {
     super(props);
+    this.state = {
+      isPlaying: false
+    };
   }
 
   render() {
+    console.log(this.props.isPlaying);
     const sounds = this.props.toneSoundObjs;
     return (
       <View style={styles.absolute}>
+        {this.props.isPlaying && (
+          <Image
+            style={styles.bigheads}
+            resizeMode="contain"
+            source={require(`../images/bigheads.png`)}
+          />
+        )}
         <TouchableOpacity
           style={styles.c3}
           onPress={this.props.canPlay ? () => sounds.c3.replayAsync() : null}
