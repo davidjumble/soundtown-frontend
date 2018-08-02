@@ -1,32 +1,28 @@
 import React, { Component } from "react";
-import {
-  Dimensions,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableHighlight,
-  View,
-  ScrollView,
-  ImageBackground
-} from "react-native";
-import { Asset, Audio, FileSystem, Font, Permissions } from "expo";
+import { View, ScrollView, ImageBackground } from "react-native";
+import { Audio, Font, Permissions } from "expo";
 import styles from "./styles";
 import RecordButtons from "./components/record-buttons";
 import Buttons from "./components/play-buttons";
+import ReverbButton from "./components/reverb-button";
+import { configureAudioMode } from "./utils";
+import axios from "axios";
 
 class App extends Component {
   constructor() {
     super();
-    this.recording = null;
+    this.toneSoundObjs = {};
+    this.reverbSoundObjs = {};
+    this.soundInstance = "";
 
     this.state = {
+      reverbOn: false,
       isRecording: false,
       isLoading: false,
       soundsReady: false,
-      isPlayingSound: false,
       fontLoaded: false,
       haveRecordingPermissions: false,
-      toneSoundObjs: {}
+      noSounds: false
     };
   }
 
@@ -37,50 +33,64 @@ class App extends Component {
       });
       this.setState({ fontLoaded: true });
     })();
-    this.askForPermissions();
+    this.getPermission();
   }
 
   render() {
     return !this.state.fontLoaded ? (
       <View style={styles.emptyContainer} />
-    ) : !this.state.haveRecordingPermissions ? (
-      <View style={styles.container}>
-        <View />
-        <Text
-          style={[
-            styles.noPermissionsText,
-            { fontFamily: "cutive-mono-regular" }
-          ]}
-        >
-          You must enable audio recording permissions in order to use this app.
-        </Text>
-        <View />
-      </View>
     ) : (
       <ScrollView>
         <ImageBackground
           source={require("./images/soundtown25cm.jpg")}
           style={styles.background}
+          resizeMode="contain"
         >
           <RecordButtons
-            _onRecordPressed={this._onRecordPressed}
             isLoading={this.state.isLoading}
-            isRecording={this.state.isRecording}
+            updateIsLoading={this.updateIsLoading}
+            updateSoundsReady={this.updateSoundsReady}
+            getTones={this.getTones}
+            updateReverbStatus={this.updateReverbStatus}
           />
           <Buttons
-            toneSoundObjs={this.state.toneSoundObjs}
-            isLoading={this.state.isLoaded}
+            //terrtiarry fro reverb
+            toneSoundObjs={
+              this.state.ReverbOn ? this.reverbSoundObjs : this.toneSoundObjs
+            }
+            isLoading={this.state.isLoading}
             canPlay={this.state.soundsReady}
+          />
+          <ReverbButton
+            switchReverb={this.getReverbTones}
+            reverbOn={this.state.reverbOn}
           />
         </ImageBackground>
       </ScrollView>
     );
   }
 
-  askForPermissions = async () => {
-    const response = await Permissions.askAsync(Permissions.AUDIO_RECORDING);
+  getPermission = () => {
+    if (!this.state.haveRecordingPermissions) {
+      Permissions.askAsync(Permissions.AUDIO_RECORDING).then(res => {
+        this.setState({
+          haveRecordingPermissions: res.status === "granted"
+        });
+      });
+    }
+  };
+
+  updateIsLoading = bool => {
+    this.setState({ isLoading: bool });
+  };
+
+  updateSoundsReady = bool => {
+    this.setState({ soundsReady: bool });
+  };
+
+  updateReverbStatus = bool => {
     this.setState({
-      haveRecordingPermissions: response.status === "granted"
+      reverbOn: bool
     });
   };
 
@@ -106,112 +116,74 @@ class App extends Component {
     fetch("https://soundtown-dev.herokuapp.com/api/sample", options)
       .then(res => res.json())
       .then(({ convertedTones }) => {
-        console.log(convertedTones);
-        const toneSoundObjs = {};
+        this.soundInstance = convertedTones.a3.slice(59, 72);
+
         for (let tone in convertedTones) {
-          const newTone = new Audio.Sound();
-          newTone.loadAsync({ uri: convertedTones[tone] });
-          toneSoundObjs[tone] = newTone;
+          this.toneSoundObjs[tone] = new Audio.Sound();
+          this.toneSoundObjs[tone].loadAsync({ uri: convertedTones[tone] });
         }
-        this.setState({ toneSoundObjs, isLoading: false, soundsReady: true });
+        configureAudioMode("playback");
+        this.setState({ isLoading: false, soundsReady: true });
+      })
+      .catch(err => {
+        console.log(err.message, "this is the error");
+        if (err.message === "Cannot load an empty url") {
+          this.setState(
+            {
+              loadingErr: true
+            },
+            () => console.log(this.state.loadingErr)
+          );
+        }
       });
   };
 
-  playSound = tone => {
-    this.state.toneSoundObjs[tone].replayAsync();
-  };
-
-  _onRecordPressed = () => {
-    if (this.state.isRecording) {
-      this._stopRecordingAndEnablePlayback();
+  getReverbTones = () => {
+    if (this.state.reverbOn) {
+      this.setState({
+        reverbOn: false
+      });
+    } else if (Object.keys(this.reverbSoundObjs).length) {
+      this.setState({
+        reverbOn: true
+      });
     } else {
-      this._stopPlaybackAndBeginRecording();
+      this.setState({
+        soundsReady: false,
+        isLoading: true
+      });
+      console.log(this.soundInstance, "this is the sound instance");
+      axios
+        .get(
+          `https://soundtown-dev.herokuapp.com/api/reverb?instance=${
+            this.soundInstance
+          }`
+        )
+        .then(({ reverbedTones }) => {
+          for (let tone in reverbedTones) {
+            this.reverbSoundObjs[tone] = new Audio.Sound();
+            this.reverbSoundObjs[tone].loadAsync({ uri: convertedTones[tone] });
+          }
+          configureAudioMode("playback");
+          this.setState({
+            isLoading: false,
+            soundsReady: true,
+            reverbOn: true
+          });
+        })
+        .catch(err => {
+          console.log(err.message, "this is the error");
+          if (err.message === "Cannot load an empty url") {
+            this.setState(
+              {
+                loadingErr: true
+              },
+              () => console.log(this.state.loadingErr)
+            );
+          }
+        });
     }
   };
-
-  async _stopPlaybackAndBeginRecording() {
-    this.setState({
-      isRecording: true
-    });
-    //clears current sound file if there is one
-    const tones = this.state.toneSoundObjs;
-    for (let tone in tones) {
-      if (tones[tone] !== null) {
-        await tones[tone].unloadAsync();
-        //may not work
-        tones[tone].setOnPlaybackStatusUpdate(null);
-        tones[tone] = {};
-      }
-    }
-    //audio settings
-    await Audio.setAudioModeAsync({
-      allowsRecordingIOS: true,
-      interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_DO_NOT_MIX,
-      playsInSilentModeIOS: true,
-      shouldDuckAndroid: true,
-      interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DO_NOT_MIX
-    });
-    //clears current recording file
-    if (this.recording !== null) {
-      this.recording.setOnRecordingStatusUpdate(null);
-      this.recording = null;
-    }
-
-    const recordingSettings = JSON.parse(
-      JSON.stringify(Audio.RECORDING_OPTIONS_PRESET_LOW_QUALITY)
-    );
-
-    //new instance of a recording class
-    const recording = new Audio.Recording();
-    await recording.prepareToRecordAsync(recordingSettings);
-    //sets a function to be called regularly with the status of the recording
-    // recording.setOnRecordingStatusUpdate(this._updateScreenForRecordingStatus);
-
-    this.recording = recording;
-    //startAsync starts the recording
-    await this.recording.startAsync(); // Will call this._updateScreenForRecordingStatus to update the screen.
-    //
-    //won't move on to set state as false until recording done
-    //then stop recording and enable playback is called
-
-    console.log("recording");
-  }
-
-  async _stopRecordingAndEnablePlayback() {
-    this.setState({
-      isLoading: true,
-      isRecording: false
-    });
-    try {
-      //this stops the recording
-      //also setRecordingStatusUpdate calls updateScreenForRecordingStatus one last Time
-      await this.recording.stopAndUnloadAsync();
-    } catch (error) {
-      // Do nothing -- we are already unloaded.
-    }
-    let uri = await this.recording.getURI();
-
-    //UNCOMMENT THIS OUT ONCE WE ARE READY TO SEND FILES EVERY TIMER
-
-    //await this.uploadAudioAsync(uri);
-    // sound will upload and then it will save new sounds using
-
-    await Audio.setAudioModeAsync({
-      allowsRecordingIOS: false,
-      interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_MIX_WITH_OTHERS,
-      playsInSilentModeIOS: true,
-      playsInSilentLockedModeIOS: true,
-      shouldDuckAndroid: true,
-      interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DO_NOT_MIX
-    });
-
-    //leaving this in as a way of testing that a recording has been made
-
-    this.setState({
-      isLoading: true
-    });
-    this.getTones(uri);
-  }
 }
 
 export default App;
