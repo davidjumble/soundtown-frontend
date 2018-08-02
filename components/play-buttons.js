@@ -8,13 +8,10 @@ import { Audio } from "expo";
 export default class Buttons extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {
-      isPlaying: false
-    };
+    this.state = {};
   }
 
   render() {
-    console.log(this.props.isPlaying);
     const sounds = this.props.toneSoundObjs;
     return (
       <View style={styles.absolute}>
