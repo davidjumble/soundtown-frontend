@@ -1,36 +1,70 @@
-import React from "react";
+import React from 'react';
+import { Image, TouchableWithoutFeedback, View } from 'react-native';
+import {debounce} from 'lodash';
+import {Audio} from 'expo';
+import {configureAudioMode} from '../utils'
+import styles from '../styles';
 
-import { Image, TouchableOpacity, View } from "react-native";
-
-import styles from "../styles";
-
-export default class RecordButtons extends React.Component {
+class RecordButtons extends React.Component {
   constructor(props) {
     super(props);
+    this.recording = null;
+
+    this.state = {
+      isRecording: false,
+    };
   }
 
   render() {
     return (
       <View style={styles.absolute}>
-        <TouchableOpacity onPress={this.props._onRecordPressed}>
+        <TouchableWithoutFeedback 
+        onPressIn={this.onRecordPressed}
+        onPressOut={this.onRecordPressed}
+        >
           <Image
             style={styles.recordsize}
             source={
               this.props.isLoading
-                ? require("../images/buttons/record-buttons/loading.png")
-                : require("../images/buttons/record-buttons/record.png")
+                ? require('../images/buttons/record-buttons/loading.png')
+                : require('../images/buttons/record-buttons/record.png')
             }
           />
-        </TouchableOpacity>
+        </TouchableWithoutFeedback>
         <Image
           style={styles.ing}
           source={
-            this.props.isRecording
-              ? require(`../images/buttons/record-buttons/ing.png`)
+            this.state.isRecording
+              ? require('../images/buttons/record-buttons/ing.png')
               : null
           }
         />
       </View>
     );
   }
+
+  onRecordPressed = () => {
+    if (!this.state.isRecording) {
+      configureAudioMode('record');
+      this.recording = new Audio.Recording();
+      this.recording.prepareToRecordAsync(Audio.RECORDING_OPTIONS_PRESET_LOW_QUALITY)
+        .then(() => {
+          this.recording.startAsync();
+          this.setState({isRecording: true});
+          this.props.updateSoundsReady(false);
+        })
+        .catch(console.log)
+    } else {
+      this.recording.stopAndUnloadAsync()
+        .then(() => {
+          this.setState({isRecording: false});
+          this.props.updateIsLoading(true);
+          const uri = this.recording.getURI();
+          this.props.getTones(uri);
+        })
+        .catch(console.log)
+    }
+  }
 }
+
+export default RecordButtons;    
