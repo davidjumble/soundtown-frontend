@@ -5,6 +5,7 @@ import styles from "./styles";
 import RecordButtons from "./components/record-buttons";
 import Buttons from "./components/play-buttons";
 import ReverbButton from "./components/reverb-button";
+import Errors from "./components/reverb-button";
 import { configureAudioMode } from "./utils";
 import axios from "axios";
 
@@ -22,7 +23,11 @@ class App extends Component {
       soundsReady: false,
       fontLoaded: false,
       haveRecordingPermissions: false,
-      noSounds: false
+      //errors below
+      noSounds: false,
+      chillout: false,
+      badResponse: false,
+      recordingError: false
     };
   }
 
@@ -54,7 +59,6 @@ class App extends Component {
             updateReverbStatus={this.updateReverbStatus}
           />
           <Buttons
-            //terrtiarry fro reverb
             toneSoundObjs={
               this.state.ReverbOn ? this.reverbSoundObjs : this.toneSoundObjs
             }
@@ -65,6 +69,8 @@ class App extends Component {
             switchReverb={this.getReverbTones}
             reverbOn={this.state.reverbOn}
           />
+
+          <Errors />
         </ImageBackground>
       </ScrollView>
     );
