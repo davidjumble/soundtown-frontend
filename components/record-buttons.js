@@ -19,8 +19,9 @@ class RecordButtons extends React.Component {
     return (
       <View style={styles.absolute}>
         <TouchableWithoutFeedback
-          onPressIn={this.onRecordPressed}
+          onPressIn={debounce(this.onRecordPressed, 100)}
           onPressOut={this.onRecordPressed}
+          disabled={this.props.isLoading}
         >
           <Image
             style={styles.recordsize}

@@ -148,6 +148,10 @@ class App extends Component {
         reverbOn: true
       });
     } else {
+      this.setState({
+        soundsReady: false,
+        isLoading: true
+      });
       console.log(this.soundInstance, "this is the sound instance");
       axios
         .get(

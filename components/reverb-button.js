@@ -10,8 +10,8 @@ const ReverbButton = ({ switchReverb, reverbOn }) => {
         style={styles.reverbButton}
         source={
           reverbOn
-            ? require("../images/buttons/reverb-buttons/reverbOn.png")
-            : require("../images/buttons/reverb-buttons/reverbOff.png")
+            ? require("../images/buttons/reverb-buttons/reverbOff.png")
+            : require("../images/buttons/reverb-buttons/reverbOn.png")
         }
       />
     </TouchableWithoutFeedback>
