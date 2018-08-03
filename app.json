@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "Record",
-    "description": "Hear me now.",
-    "slug": "record",
+    "name": "Soundtown",
+    "description": "You are now entering soundtown.",
+    "slug": "Soundtown",
     "privacy": "public",
     "sdkVersion": "27.0.0",
     "version": "1.0.0",
     "orientation": "portrait",
     "primaryColor": "#cccccc",
-    "icon": "./assets/icons/icon.png",
+    "icon": "./images/buttons/record-buttons/record.png",
     "loading": {
       "hideExponentText": false,
       "icon": "./assets/icons/icon.png"
