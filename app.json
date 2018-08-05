@@ -2,13 +2,13 @@
   "expo": {
     "name": "Soundtown",
     "description": "You are now entering soundtown.",
-    "slug": "Soundtown",
+    "slug": "soundtown",
     "privacy": "public",
     "sdkVersion": "27.0.0",
     "version": "1.0.0",
     "orientation": "portrait",
     "primaryColor": "#cccccc",
-    "icon": "./images/buttons/record-buttons/record.png",
+    "icon": "./assets/icons/icon.png",
     "loading": {
       "hideExponentText": false,
       "icon": "./assets/icons/icon.png"
